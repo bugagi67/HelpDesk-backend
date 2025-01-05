@@ -12,14 +12,28 @@ const tickets = [
     id: 1,
     name: "Поменять краску в принтере, ком. 404",
     description: "Принтер HP LJ 1210, картридж на складе",
-    status: "false",
+    status: false,
     created: new Date(),
   },
   {
     id: 2,
     name: "Переустановить Windows, ПК-Hall24",
     description: "Переустановить Windows, ключ на почте",
-    status: "true",
+    status: true,
+    created: new Date(2024, 10, 21, 15, 11),
+  },
+  {
+    id: 3,
+    name: "Замена клавиатуры в Бухгалтерии",
+    description: "Выбрать что то получше",
+    status: false,
+    created: new Date(),
+  },
+  {
+    id: 4,
+    name: "Настроить интернет охраннику",
+    description: "Не для работы",
+    status: true,
     created: new Date(2024, 11, 21, 15, 11),
   },
 ];
@@ -56,12 +70,18 @@ app.use((ctx) => {
     case "ticketById":
       const { id: ticketId } = ctx.request.query;
       const ticketShow = tickets.find(
-        (ticket) => ticket.id === parseInt(ticketId)
+        (ticket) => ticket.id === parseInt(ticketId, 10)
       );
+
       if (ticketShow) {
-        ctx.response.body = ticketShow.description;
+        ctx.response.body = {
+          ...ticketShow,
+          created: moment(ticketShow.created).format("D MMMM YYYY, HH:mm"),
+        };
+        ctx.response.status = 200;
       } else {
         ctx.response.status = 404;
+        ctx.response.body = { error: "Ticket not found" };
       }
       return;
     case "createTicket":
@@ -74,7 +94,7 @@ app.use((ctx) => {
         id: tickets.length ? tickets[tickets.length - 1].id + 1 : 1,
         name: data.name,
         description: data.description,
-        status: data.status ? data.status : "false",
+        status: data.status ? data.status : false,
         created: new Date(),
       };
 
@@ -135,9 +155,13 @@ app.use((ctx) => {
 
       const updateTicket = {
         ...tickets[ticketIndex],
-        name: name || tickets[ticketIndex].name,
-        description: description || tickets[ticketIndex].description,
-        status: status || tickets[ticketIndex].status,
+        name: name !== undefined ? name : tickets[ticketIndex].name,
+        description:
+          description !== undefined
+            ? description
+            : tickets[ticketIndex].description,
+        status:
+          status !== undefined ? Boolean(status) : tickets[ticketIndex].status,
       };
 
       tickets.splice(ticketIndex, 1, updateTicket);
@@ -145,7 +169,7 @@ app.use((ctx) => {
       ctx.response.status = 200;
       ctx.response.body = tickets.map((ticket) => ({
         ...ticket,
-        created: moment(ticket.created).format("D MMMM YYYY, HH:mm"), // Форматируем дату
+        created: moment(ticket.created).format("D MMMM YYYY, HH:mm"),
       }));
       return;
   }
